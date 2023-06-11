@@ -22,3 +22,11 @@ export const CREATE_JOB_ERROR = "CREATE_JOB_ERROR"
 
 export const GET_JOBS_BEGIN = "GET_ALL_JOBS"
 export const GET_JOBS_SUCCESS = "GOT_ALL_JOBS"
+
+export const SET_EDIT_JOB = "SET_EDIT_JOB"
+
+export const DELETE_JOB = "DELETE_THE_JOB_BUDDY"
+
+export const EDIT_JOB_BEGIN = "EDIT_JOB_BEGIN"
+export const EDIT_JOB_SUCCESS = "EDIT_JOB_SUCCESS"
+export const EDIT_JOB_ERROR = "EDIT_JOB_ERROR"

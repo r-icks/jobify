@@ -6,6 +6,7 @@ export const AddJob = () => {
    const {
     showAlert,
     isEditing,
+    editJobId,
     displayAlert,
     position,
     company,
@@ -17,7 +18,8 @@ export const AddJob = () => {
     handleChange,
     clearValues,
     createJob,
-    isLoading
+    isLoading,
+    editJob
   } = useAppContext()
 
   const handleSubmit = (e) => {
@@ -27,7 +29,7 @@ export const AddJob = () => {
     //   return
     // }
     if(isEditing){
-
+      editJob(editJobId);
       return
     }
     createJob()

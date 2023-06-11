@@ -7,7 +7,12 @@ import {
     UPDATE_USER_BEGIN, UPDATE_USER_ERROR, UPDATE_USER_SUCCESS, HANDLE_CHANGE, 
     CLEAR_VALUES, CREATE_JOB_BEGIN, CREATE_JOB_SUCCESS, CREATE_JOB_ERROR, 
     GET_JOBS_BEGIN,
-    GET_JOBS_SUCCESS
+    GET_JOBS_SUCCESS,
+    SET_EDIT_JOB,
+    DELETE_JOB,
+    EDIT_JOB_BEGIN,
+    EDIT_JOB_SUCCESS,
+    EDIT_JOB_ERROR
 } from "./actions";
 
 import axios from "axios"
@@ -199,7 +204,7 @@ export const AppProvider = ({ children }) => {
 
         dispatch({type: GET_JOBS_BEGIN})
         try{
-            const {data} = await authFetch(url)
+            const {data} = await authFetch.get(url)
             const {jobs, totalJobs, numOfPages} = data
             dispatch({
                 type: GET_JOBS_SUCCESS,
@@ -218,11 +223,42 @@ export const AppProvider = ({ children }) => {
     }
 
     const setEditJob = (id)=>{
-        console.log(`set edit job: ${id}`)
+        dispatch({type: SET_EDIT_JOB,
+        payload:{id}})
     }
 
-    const deleteJob = (id)=>{
-        console.log(`set delete job: ${id}`)
+    const editJob = async (id)=>{
+        const {position, jobLocation, company, jobType, status} = state
+        dispatch({type: EDIT_JOB_BEGIN})
+        try{
+            await authFetch.patch(`/jobs/${id}`,{
+                position,
+                jobLocation,
+                company,
+                jobType,
+                status
+            })
+            dispatch({type: EDIT_JOB_SUCCESS})
+            dispatch({type:CLEAR_VALUES})
+        }
+        catch(err){
+            if(err.response.status === 401) return;
+            dispatch({type:EDIT_JOB_ERROR,
+            payload:{msg:err.response.data.msg}})
+        }
+        clearAlert()
+    }
+
+    const deleteJob = async (id)=>{
+        dispatch({type:DELETE_JOB})
+        try{
+            await authFetch.delete(`/jobs/${id}`,)
+            getJobs()
+        }
+        catch(err){
+            console.log(err)
+            logoutUser()
+        }
     }
     
     return (
@@ -238,7 +274,8 @@ export const AppProvider = ({ children }) => {
             createJob,
             getJobs,
             setEditJob,
-            deleteJob
+            deleteJob,
+            editJob
         }}>
             {children}
         </AppContext.Provider>
