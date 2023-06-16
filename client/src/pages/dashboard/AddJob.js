@@ -7,7 +7,6 @@ export const AddJob = () => {
     showAlert,
     isEditing,
     editJobId,
-    displayAlert,
     position,
     company,
     jobLocation,

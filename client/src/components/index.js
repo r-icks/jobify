@@ -8,6 +8,10 @@ import { NavLinks } from "./NavLinks";
 import { FormSelect } from "./FormSelect";
 import { SearchContainer } from "./SearchContainer";
 import { JobsContainer  } from "./JobsContainer";
+import { StatsContainer } from "./StatsContainer";
+import { ChartsContainer } from "./ChartsContainer.js"
+import { Loading } from "./Loading";
+
 
 export {Logo, FormRow, Alert, Navbar, SmallSidebar, BigSidebar, NavLinks, FormSelect,
-SearchContainer, JobsContainer };
+SearchContainer, JobsContainer, StatsContainer, ChartsContainer, Loading};

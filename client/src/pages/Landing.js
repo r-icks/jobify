@@ -1,10 +1,14 @@
 import { Logo } from "../components"
 import main from "../assets/images/main.svg"
 import Wrapper from "../assets/wrappers/Testing.js"
-import { Link } from "react-router-dom"
+import { Link, Navigate } from "react-router-dom"
+import { useAppContext } from "../context/appContext"
 
 const Landing = () => {
+    const {user} = useAppContext()
   return (
+    <>
+    {user && <Navigate to='/' />}
     <Wrapper>
         <nav>
             <Logo />
@@ -24,6 +28,7 @@ const Landing = () => {
         <img src={main} alt="job hunt" className="img main-img" />
         </div>
     </Wrapper>
+    </>
   )
 }
 export default Landing

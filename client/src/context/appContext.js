@@ -1,4 +1,4 @@
-import { useReducer, useContext } from "react";
+import { useReducer, useContext, useEffect } from "react";
 import React from "react";
 import reducer from "./reducer";
 import {
@@ -12,23 +12,26 @@ import {
     DELETE_JOB,
     EDIT_JOB_BEGIN,
     EDIT_JOB_SUCCESS,
-    EDIT_JOB_ERROR
+    EDIT_JOB_ERROR,
+    SHOW_STATS_BEGIN,
+    SHOW_STATS_SUCCESS,
+    CLEAR_FILTER,
+    CHANGE_PAGE,
+    DELETE_JOB_ERROR,
+    GET_CURRENT_USER_BEGIN,
+    GET_CURRENT_USER_SUCCESS
 } from "./actions";
 
 import axios from "axios"
 
-const token = localStorage.getItem('token')
-const user = localStorage.getItem('user')
-const userLocation = localStorage.getItem('location')
-
 export const initialState = {
+    userLoading: true,
     isLoading: false,
     showAlert: false,
     alertText: '',
     alertType: '',
-    user: user ? JSON.parse(user) : null,
-    token: token,
-    userLocation: userLocation || '',
+    user: null,
+    userLocation: '',
     showSidebar: false,
     isEditing: false,
     editJobId: '',
@@ -38,23 +41,18 @@ export const initialState = {
     jobType: 'full-time',
     statusOptions: ['pending','interview','declined'],
     status: 'pending',
-    jobLocation: userLocation || '',
+    jobLocation: '',
     jobs: [],
     totalJobs: 0,
     numOfPages: 1,
     page: 1,
-}
-
-const addUserToLocalStorage = ({ user, token, location }) => {
-    localStorage.setItem('user', JSON.stringify(user))
-    localStorage.setItem('token', token)
-    localStorage.setItem('location', location)
-}
-
-const removeUserFromLocalStorage = () => {
-    localStorage.removeItem('user')
-    localStorage.removeItem('token')
-    localStorage.removeItem('location')
+    stats: {},
+    monthlyApplications: [],
+    search:'',
+    searchStatus:'all',
+    searchType:'all',
+    sorting:'latest',
+    sortOptions:['latest','oldest','a-z','z-a']
 }
 
 const AppContext = React.createContext();
@@ -66,15 +64,13 @@ export const AppProvider = ({ children }) => {
         baseURL: "/api/v1"
     })
 
-
     // auth request
-    authFetch.interceptors.request.use(  //could refer axios documentation
-        (config) => {
-            config.headers['Authorization'] = `Bearer ${state.token}`
-            return config;
+    authFetch.interceptors.request.use(
+        (config)=>{
+            return config
         },
-        (error) => {
-            return Promise.reject(error);
+        (error)=>{
+            return Promise.reject(error)
         }
     )
 
@@ -84,7 +80,6 @@ export const AppProvider = ({ children }) => {
             return response
         },
         (error) => {
-            // console.log(error.response)
             if (error.response.status === 401) {
                 logoutUser();
             }
@@ -102,14 +97,13 @@ export const AppProvider = ({ children }) => {
             const { data } = await axios.post(
                 `/api/v1/auth/${endPoint}`,
                 currentUser)
-            const { user, token, location } = data
+            const { user, location } = data
             dispatch({
                 type: SETUP_USER_SUCCESS,
                 payload: {
-                    user, token, location, alertText
+                    user, location, alertText
                 }
             })
-            addUserToLocalStorage({ user, token, location });
         }
         catch (err) {
             dispatch({
@@ -120,32 +114,29 @@ export const AppProvider = ({ children }) => {
         clearAlert();
     }
 
-    const logoutUser = () => {
+    const logoutUser = async () => {
+        await authFetch.get('/auth/logout')
         dispatch({ type: LOGOUT_USER })
-        removeUserFromLocalStorage();
     }
 
     const updateUser = async (currentUser) => {
         dispatch({ type: UPDATE_USER_BEGIN })
         try {
             const { data } = await authFetch.patch('/auth/updateUser', currentUser)
-            const { user, location, token } = data
+            const { user, location } = data
             dispatch({
                 type: UPDATE_USER_SUCCESS, payload: {
-                    user, location, token
+                    user, location
                 }
             })
-            addUserToLocalStorage({ user, location, token })
-            console.log(data)
         }
         catch (err) {
-            if (err.response.status != 401) {
+            if (err.response.status !== 401) {
                 dispatch({
                     type: UPDATE_USER_ERROR,
                     payload: { msg: err.response.data.msg }
                 })
             }
-            // console.log(err)
         }
         clearAlert()
     }
@@ -200,8 +191,11 @@ export const AppProvider = ({ children }) => {
     }
 
     const getJobs = async () => {
-        let url= '/jobs'
-
+        const {searchStatus, searchType, sorting, search, page} = state
+        let url= `/jobs?status=${searchStatus}&jobType=${searchType}&sort=${sorting}&page=${page}`
+        if(search){
+            url= url + "&search="+search
+        }
         dispatch({type: GET_JOBS_BEGIN})
         try{
             const {data} = await authFetch.get(url)
@@ -216,7 +210,6 @@ export const AppProvider = ({ children }) => {
             })
         }
         catch(err){
-            console.log(err.response)
             logoutUser()
         }
         clearAlert()
@@ -256,10 +249,55 @@ export const AppProvider = ({ children }) => {
             getJobs()
         }
         catch(err){
-            console.log(err)
+            if(err.response.status === 401) return;
+            dispatch({type: DELETE_JOB_ERROR,
+            payload:{msg:err.response.data.msg}})
+        }
+        clearAlert()
+    }
+
+    const showStats = async ()=>{
+        dispatch({type: SHOW_STATS_BEGIN })
+        try{
+            const { data } = await authFetch('/jobs/stats')
+            dispatch({type: SHOW_STATS_SUCCESS, 
+            payload:{
+                stats: data.defaultStats,
+                monthlyApplications: data.monthlyApplications
+            }})
+        }
+        catch(err){
+            logoutUser()
+        }
+        clearAlert()
+    }
+
+    const clearFilters = ()=>{
+        dispatch({type:CLEAR_FILTER});
+    }
+
+    const changePage = (page)=>{
+        dispatch({type:CHANGE_PAGE,
+        payload: {page}});
+    }
+
+    const getCurrentUser = async ()=>{
+        dispatch({type: GET_CURRENT_USER_BEGIN})
+        try{
+            const {data} = await authFetch('/auth/getCurrentUser')
+            const {user, location} = data
+            dispatch({type: GET_CURRENT_USER_SUCCESS,payload:
+            {user, location}})
+        }
+        catch(err){
+            if(err.response.status === 401 ) return;
             logoutUser()
         }
     }
+
+    useEffect(()=>{
+        getCurrentUser()
+    },[])
     
     return (
         <AppContext.Provider value={{
@@ -275,7 +313,10 @@ export const AppProvider = ({ children }) => {
             getJobs,
             setEditJob,
             deleteJob,
-            editJob
+            editJob,
+            showStats,
+            clearFilters,
+            changePage
         }}>
             {children}
         </AppContext.Provider>

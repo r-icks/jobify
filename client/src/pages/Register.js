@@ -3,7 +3,7 @@ import { Logo, FormRow, Alert } from "../components"
 import { useState, useEffect } from "react"
 import { useAppContext } from "../context/appContext.js"
 
-import {useNavigate, userNavigate} from "react-router-dom"
+import { useNavigate, userNavigate } from "react-router-dom"
 
 const initialState = {
   name: '',
@@ -16,48 +16,51 @@ export const Register = () => {
   const navigate = useNavigate();
   const [values, setValues] = useState(initialState);
 
-  const {isLoading, showAlert, displayAlert, setupUser, user} = useAppContext();
+  const { isLoading, showAlert, displayAlert, setupUser, user } = useAppContext();
 
   const handleChange = (e) => {
     setValues(
       {
         ...values,
-        [e.target.name]:e.target.value
+        [e.target.name]: e.target.value
       }
     )
   }
 
   const onSubmit = (e) => {
     e.preventDefault();
-    const {name , email, password, isMember} = values; 
-    console.log(values);
-    if(!email || !password || (!isMember && !name)){
+    const { name, email, password, isMember } = values;
+    if (!email || !password || (!isMember && !name)) {
       displayAlert();
       return
     }
-    const currentUser = {name, email, password}
-    if(isMember){
-        setupUser({currentUser,
+    const currentUser = { name, email, password }
+    if (isMember) {
+      setupUser({
+        currentUser,
         endPoint: "login",
-        alertText: "Logged in! Redirecting..."})
+        alertText: "Logged in! Redirecting..."
+      })
     }
-    else{
-      setupUser({currentUser,
-      endPoint: "register",
-      alertText: "User created! Redirecting..."})
+    else {
+      setupUser({
+        currentUser,
+        endPoint: "register",
+        alertText: "User created! Redirecting..."
+      })
     }
-  } 
+  }
 
-  useEffect(()=>{
-    if(user){
-      setTimeout(()=>{
+  useEffect(() => {
+    if (user) {
+      setTimeout(() => {
         navigate('/')
       }, 3000)
     }
   }, [user, navigate])
 
   const toggleMember = () => {
-    setValues({...values, isMember: !values.isMember});
+    setValues({ ...values, isMember: !values.isMember });
   }
 
   return (
@@ -69,34 +72,44 @@ export const Register = () => {
         {showAlert && <Alert />}
 
         {
-          !values.isMember && 
-        <FormRow 
-        handleChange={handleChange} 
-        type="text" 
-        value={values.name} 
-        name="name"/>
+          !values.isMember &&
+          <FormRow
+            handleChange={handleChange}
+            type="text"
+            value={values.name}
+            name="name" />
         }
-                
-        <FormRow 
-        handleChange={handleChange} 
-        type="email" 
-        value={values.email} 
-        name="email"/>
 
-        <FormRow 
-        handleChange={handleChange} 
-        type="password" 
-        value={values.password} 
-        name="password"/>
+        <FormRow
+          handleChange={handleChange}
+          type="email"
+          value={values.email}
+          name="email" />
+
+        <FormRow
+          handleChange={handleChange}
+          type="password"
+          value={values.password}
+          name="password" />
 
         <button type="submit" className="btn btn-block" disabled={isLoading}>
-            submit
+          submit
+        </button>
+
+        <button type="button" className="btn btn-block btn-hipster" disabled={isLoading} onClick={() => {
+          setupUser({
+            currentUser:{email:'testUser@test.com', password:'secret'},
+            endPoint: "login",
+            alertText: "Login Succesful! Redirecting..."
+          })
+        }}>
+          {isLoading?'loading...':'demo app'}
         </button>
 
         <p>
-        {values.isMember ? "Not a member yet?" : "Already a member?"}
+          {values.isMember ? "Not a member yet?" : "Already a member?"}
           <button type="button" onClick={toggleMember} className="member-btn">
-            {values.isMember ? "Register": "Login"}
+            {values.isMember ? "Register" : "Login"}
           </button>
         </p>
 
